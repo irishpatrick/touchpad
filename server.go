@@ -1,5 +1,11 @@
 package main
 
+// #cgo CFLAGS: -Idriver
+// #cgo LDFLAGS: -Ldriver/build -ldriver
+//
+// #include "driver.h"
+import "C"
+
 import (
     "flag"
     "fmt"
