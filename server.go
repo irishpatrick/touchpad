@@ -2,7 +2,6 @@ package main
 
 // #cgo CFLAGS: -Idriver
 // #cgo LDFLAGS: -Ldriver/build -ldriver
-//
 // #include "driver.h"
 import "C"
 
@@ -13,6 +12,9 @@ import (
     "html/template"
     "log"
     "net/http"
+    "os"
+    "os/signal"
+    "syscall"
 
     "github.com/gorilla/mux"
     "github.com/gorilla/websocket"
@@ -61,9 +63,35 @@ func asset(w http.ResponseWriter, r *http.Request) {
     w.Write(buf)
 }
 
+func setupHandlers() {
+    c := make(chan os.Signal)
+    signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+    go func() {
+        <-c
+        fmt.Println("shutting down...")
+        C.driver_destroy_device()
+        os.Exit(0)
+    }()
+}
+
 func main() {
     flag.Parse()
     log.SetFlags(0)
+
+    setupHandlers()
+
+    errno := C.driver_create_device()
+    if errno != 0 {
+        log.Fatal("cannot create device! err=", errno)
+    }
+
+    // test device
+    for i := 0; i < 50; i++ {
+        errno := C.driver_mouse_rel(10, 10)
+        if errno != 0 {
+            fmt.Println("error: ", errno)
+        }
+    }
 
     router := mux.NewRouter()
     router.HandleFunc("/static/{[a-z]+}.js", asset).Methods("GET")
@@ -74,6 +102,8 @@ func main() {
     http.Handle("/", router)
 
     log.Fatal(http.ListenAndServe(*addr, nil))
+
+
 }
 
 var homeTemplate = template.Must(template.ParseFiles("./static/touchpad.html"))

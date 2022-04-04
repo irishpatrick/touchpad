@@ -27,6 +27,10 @@ class MouseState
     {
         this.x = 0
         this.y = 0
+        this.last_x = 0;
+        this.last_y = 0;
+        this.delta_x = 0;
+        this.delta_y = 0;
         this.buttons = [0, 0, 0]
     }
 
@@ -35,11 +39,16 @@ class MouseState
         let coord = fromScreen(e.x, e.y)
         this.x = coord.x
         this.y = coord.y
+
+        this.delta_x = (this.x - this.last_x).toFixed(PRECISION);
+        this.delta_y = (this.y - this.last_y).toFixed(PRECISION);
+        this.last_x = this.x;
+        this.last_y = this.y;
     }
 
     broadcast(sock)
     {
-        sock.send("m," + this.x + "," + this.y)
+        sock.send("m," + this.delta_x + "," + this.delta_y)
     }
 }
 

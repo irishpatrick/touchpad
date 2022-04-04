@@ -6,6 +6,10 @@
 #include <libevdev/libevdev-uinput.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <unistd.h>
+#ifdef __VERBOSE__
+#include <stdio.h>
+#endif /* __VERBOSE__ */
 
 static struct libevdev* dev = NULL;
 static struct libevdev_uinput* uidev = NULL;
@@ -30,11 +34,16 @@ int driver_create_device(void)
         return err;
     }
 
+    sleep(1);
+
     return 0;
 }
 
 int driver_mouse_rel(int x, int y)
 {
+#ifdef __VERBOSE__
+    printf("move mouse relative %d,%d\n", x, y);
+#endif /* __VERBOSE__ */
     int err;
 
     err = libevdev_uinput_write_event(uidev, EV_REL, REL_X, x);
@@ -43,7 +52,7 @@ int driver_mouse_rel(int x, int y)
         return err;
     }
     
-    err = libevdev_uinput_write_event(uidev, EV_KEY, REL_Y, y);
+    err = libevdev_uinput_write_event(uidev, EV_REL, REL_Y, y);
     if (err != 0)
     {
         return err;
