@@ -20,6 +20,7 @@ import (
     "github.com/gorilla/websocket"
 )
 
+var homeTemplate = template.Must(template.ParseFiles("./static/touchpad.html"))
 var addr = flag.String("addr", "0.0.0.0:8080", "http service address")
 var upgrader = websocket.Upgrader{}
 
@@ -85,14 +86,6 @@ func main() {
         log.Fatal("cannot create device! err=", errno)
     }
 
-    // test device
-    for i := 0; i < 50; i++ {
-        errno := C.driver_mouse_rel(10, 10)
-        if errno != 0 {
-            fmt.Println("error: ", errno)
-        }
-    }
-
     router := mux.NewRouter()
     router.HandleFunc("/static/{[a-z]+}.js", asset).Methods("GET")
     router.HandleFunc("/static/{[a-z]+}.css", asset).Methods("GET")
@@ -102,9 +95,5 @@ func main() {
     http.Handle("/", router)
 
     log.Fatal(http.ListenAndServe(*addr, nil))
-
-
 }
-
-var homeTemplate = template.Must(template.ParseFiles("./static/touchpad.html"))
 

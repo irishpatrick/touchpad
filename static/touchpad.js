@@ -1,5 +1,21 @@
 const PRECISION = 5
 
+class Overlay
+{
+}
+
+class TransparentOverlay extends Overlay
+{
+}
+
+class TouchpadOverlay extends Overlay
+{
+}
+
+class ControllerOverlay extends Overlay
+{
+}
+
 class Sprite
 {
     constructor()
@@ -52,6 +68,87 @@ class MouseState
     }
 }
 
+class TouchState
+{
+    constructor()
+    {
+        this.ongoing = []
+    }
+
+    ongoingTouchById(id)
+    {
+        for (let i = 0; i < this.ongoing.length; i++)
+        {
+            if (this.ongoing[i].identifier == id)
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    copyTouch({ identifier, pageX, pageY })
+    {
+        return { identifier, pageX, pageY };
+    }
+
+    handleStart(e)
+    {
+        const touches = e.changedTouches;
+
+        for (let i = 0; i < touches.length; i++)
+        {
+            this.ongoing.push(this.copyTouch(touches[i]))
+        }
+    }
+
+    handleMove(e)
+    {
+        const touches = e.changedTouches;
+        for (let i = 0; i < touches.length; i++)
+        {
+            const idx = this.ongoingTouchById(touches[i].identifier);
+        }
+    }
+
+    handleEnd(e)
+    {
+        const touches = e.changedTouches;
+        for (let i = 0; i < touches.length; i++)
+        {
+            const idx = this.ongoingTouchById(touches[i].identifier);
+            if (idx >= 0)
+            {
+                this.ongoing.splice(idx, 1); // remove
+            }
+        }
+    }
+
+    handleCancel(e)
+    {
+        const touches = e.changedTouches;
+        for (let i = 0; i < touches.length; i++)
+        {
+            const idx = this.ongoingTouchById(touches[i].identifier);
+            if (idx >= 0)
+            {
+                this.ongoing.splice(idx, 1); // remove
+            }
+        }
+    }
+
+    broadcast(sock)
+    {
+        let msg = "";
+        for (let i = 0; i < this.ongoing.length; i++)
+        {
+            msg += "(" + i + "," + "x" + "," + "y" + ")"
+        }
+        sock.send(msg);
+    }
+}
+
 function fromScreen(sx, sy)
 {
     adj = {x: 0, y: 0}
@@ -68,6 +165,7 @@ window.addEventListener("load", (e) =>
     var ctx = canvas.getContext("2d")
     var sock = new WebSocket(ADDR)
     var mouseState = new MouseState()
+    var touchState = new TouchState()
 
     sock.onopen = function(e)
     {
@@ -99,6 +197,34 @@ window.addEventListener("load", (e) =>
     {
         mouseState.update(e)
         mouseState.broadcast(sock)
+    }, false)
+
+    canvas.addEventListener("touchstart", (e) =>
+    {
+        e.preventDefault()
+        touchState.handleStart(e)
+        touchState.broadcast(sock);
+    }, false)
+    
+    canvas.addEventListener("touchend", (e) =>
+    {
+        e.preventDefault()
+        touchState.handleEnd(e)
+        touchState.broadcast(sock);
+    }, false)
+    
+    canvas.addEventListener("touchcancel", (e) =>
+    {
+        e.preventDefault()
+        touchState.handleCancel(e)
+        touchState.broadcast(sock);
+    }, false)
+    
+    canvas.addEventListener("touchmove", (e) =>
+    {
+        e.preventDefault()
+        touchState.handleMove(e)
+        touchState.broadcast(sock);
     }, false)
 
     return false
