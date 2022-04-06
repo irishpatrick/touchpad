@@ -73,6 +73,7 @@ class TouchState
     constructor()
     {
         this.ongoing = []
+        this.last = []
     }
 
     ongoingTouchById(id)
@@ -80,6 +81,19 @@ class TouchState
         for (let i = 0; i < this.ongoing.length; i++)
         {
             if (this.ongoing[i].identifier == id)
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    lastTouchById(id)
+    {
+        for (let i = 0; i < this.last.length; i++)
+        {
+            if (this.last[i].identifier == id)
             {
                 return i;
             }
@@ -100,6 +114,7 @@ class TouchState
         for (let i = 0; i < touches.length; i++)
         {
             this.ongoing.push(this.copyTouch(touches[i]))
+            this.last.push(this.copyTouch(touches[i]))
         }
     }
 
@@ -109,6 +124,8 @@ class TouchState
         for (let i = 0; i < touches.length; i++)
         {
             const idx = this.ongoingTouchById(touches[i].identifier);
+            this.last[idx] = this.copyTouch(this.ongoing[idx]);
+            this.ongoing[idx] = this.copyTouch(touches[i]);
         }
     }
 
@@ -121,6 +138,7 @@ class TouchState
             if (idx >= 0)
             {
                 this.ongoing.splice(idx, 1); // remove
+                this.last.splice(idx, 1); // remove
             }
         }
     }
@@ -134,6 +152,7 @@ class TouchState
             if (idx >= 0)
             {
                 this.ongoing.splice(idx, 1); // remove
+                this.last.splice(idx, 1); // remove
             }
         }
     }
@@ -141,9 +160,13 @@ class TouchState
     broadcast(sock)
     {
         let msg = "";
+        let delta_x = 0;
+        let delta_y = 0;
         for (let i = 0; i < this.ongoing.length; i++)
         {
-            msg += "(" + i + "," + "x" + "," + "y" + ")"
+            delta_x = this.ongoing[i].pageX - this.last[i].pageX;
+            delta_y = this.ongoing[i].pageY - this.last[i].pageY;
+            msg += "(" + i + "," + delta_x + "," + delta_y + ")"
         }
         sock.send(msg);
     }

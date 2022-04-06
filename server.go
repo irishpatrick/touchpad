@@ -14,6 +14,8 @@ import (
     "net/http"
     "os"
     "os/signal"
+    "strconv"
+    "strings"
     "syscall"
 
     "github.com/gorilla/mux"
@@ -39,7 +41,8 @@ func echo (w http.ResponseWriter, r *http.Request) {
             break
         }
 
-        log.Printf("recv %s", message)
+        //log.Printf("recv %s", message)
+        processCommand(message)
         err = c.WriteMessage(mt, message)
         if err != nil {
             log.Println("write: ", err)
@@ -62,6 +65,38 @@ func asset(w http.ResponseWriter, r *http.Request) {
     }
 
     w.Write(buf)
+}
+
+func processCommand(msg []byte) {
+    if len(msg) < 2 {
+        return
+    }
+
+    str := string(msg)
+    fingers := strings.Split(str, ")")
+    for _, finger := range fingers {
+        if len(finger) < 1 {
+            continue
+        }
+
+        tmp := finger[1:] // trim open paren
+
+        numbers := strings.Split(tmp, ",")
+        if len(numbers) != 3 {
+            continue
+        }
+
+        dx, err := strconv.Atoi(numbers[1])
+        if err != nil {
+            panic(err)
+        }
+        dy, err := strconv.Atoi(numbers[2])
+        if err != nil {
+            panic(err)
+        }
+
+        C.driver_mouse_rel(C.int(dx), C.int(dy))
+    }
 }
 
 func setupHandlers() {
