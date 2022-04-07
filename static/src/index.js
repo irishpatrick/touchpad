@@ -31,7 +31,7 @@ function bindRequest(un, pw)
     xhr.send(JSON.stringify({
         username: un,
         password: pw
-    })
+    }))
 }
 
 function isSockOpen(sock)

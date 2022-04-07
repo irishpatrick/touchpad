@@ -3,4 +3,5 @@
 touchpad
 **/build*/*
 *.pem
-
+**/node_modules/*
+**/dist/*.js
