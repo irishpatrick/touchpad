@@ -16,6 +16,29 @@ class ControllerOverlay extends Overlay
 {
 }
 
+function aliveRequest()
+{
+    var xhr = new XMLHttpRequest()
+    xhr.open("POST", ALIVE_ENDPOINT, true)
+    xhr.send()
+}
+
+function bindRequest(un, pw)
+{
+    var xhr = new XMLHttpRequest()
+    xhr.open("POST", BIND_ENDPOINT, true)
+    xhr.setRequestHeader("Content-Type", "application/json")
+    xhr.send(JSON.stringify({
+        username: un,
+        password: pw
+    })
+}
+
+function isSockOpen(sock)
+{
+    return sock.readyState === WebSocket.OPEN
+}
+
 class Sprite
 {
     constructor()
@@ -64,6 +87,11 @@ class MouseState
 
     broadcast(sock)
     {
+        if (!isSockOpen(sock))
+        {
+            return;
+        }
+
         sock.send("m," + this.delta_x + "," + this.delta_y)
     }
 }
@@ -159,6 +187,11 @@ class TouchState
 
     broadcast(sock)
     {
+        if (!isSockOpen(sock))
+        {
+            return;
+        }
+
         let msg = "";
         let delta_x = 0;
         let delta_y = 0;
@@ -168,6 +201,7 @@ class TouchState
             delta_y = this.ongoing[i].pageY - this.last[i].pageY;
             msg += "(" + i + "," + delta_x + "," + delta_y + ")"
         }
+
         sock.send(msg);
     }
 }
@@ -182,6 +216,7 @@ function fromScreen(sx, sy)
 
 window.addEventListener("load", (e) => 
 {
+    var intervalID = setInterval(aliveRequest, 50 * 1000)
     var canvas = document.getElementById("canvas")
     canvas.width = window.innerWidth
     canvas.height = window.innerHeight
