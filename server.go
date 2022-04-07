@@ -15,20 +15,27 @@ import (
     "net/http"
     "os"
     "os/signal"
+    "path"
     "strconv"
     "strings"
     "syscall"
     "time"
 
+    "github.com/dgrijalva/jwt-go"
     "github.com/gorilla/mux"
     "github.com/gorilla/websocket"
-    "github.com/dgrijalva/jwt-go"
 )
 
-var homeTemplate = template.Must(template.ParseFiles("./static/touchpad.html"))
+var TEMPLATE_HTML = "index.html"
+var TOKEN_COOKIE_NAME = "token"
+
+/** Flags **/
 var addr = flag.String("addr", "0.0.0.0:8080", "http service address")
+var siteDir = flag.String("site", "./static/dist/", "static site assets")
 var certFile = flag.String("cert", "", "tls cert file")
 var keyFile = flag.String("key", "", "tlk key file")
+
+var homeTemplate = template.Must(template.ParseFiles(path.Join(*siteDir, TEMPLATE_HTML)))
 var upgrader = websocket.Upgrader{}
 
 var isAlive = false
@@ -92,7 +99,16 @@ func home(w http.ResponseWriter, r *http.Request) {
 }
 
 func asset(w http.ResponseWriter, r *http.Request) {
-    fn := "." + r.URL.Path
+    fn := path.Join(*siteDir, r.URL.Path)
+    mime := "text/plain"
+    if strings.HasSuffix(fn, ".js") {
+        mime = "text/javascript"
+    } else if strings.HasSuffix(fn, ".css") {
+        mime = "text/css"
+    }
+
+    w.Header().Set("Content-Type", mime)
+
     buf, err := ioutil.ReadFile(fn)
     if err != nil {
         w.WriteHeader(http.StatusNotFound)
@@ -134,14 +150,14 @@ func bind(w http.ResponseWriter, r *http.Request) {
     }
 
     http.SetCookie(w, &http.Cookie{
-        Name: "token",
+        Name: TOKEN_COOKIE_NAME,
         Value: tokenStr,
         Expires: expirationTime,
     })
 }
 
 func alive(w http.ResponseWriter, r *http.Request) {
-    c, err := r.Cookie("token")
+    c, err := r.Cookie(TOKEN_COOKIE_NAME)
     if err != nil {
         if err == http.ErrNoCookie {
             w.WriteHeader(http.StatusUnauthorized)
@@ -236,8 +252,8 @@ func main() {
     }
 
     router := mux.NewRouter()
-    router.HandleFunc("/static/{[a-z]+}.js", asset).Methods("GET")
-    router.HandleFunc("/static/{[a-z]+}.css", asset).Methods("GET")
+    router.HandleFunc("/{[a-z]+}.js", asset).Methods("GET")
+    router.HandleFunc("/{[a-z]+}.css", asset).Methods("GET")
     router.HandleFunc("/bind", bind).Methods("POST")
     router.HandleFunc("/alive", alive).Methods("POST")
     router.HandleFunc("/echo", echo)
