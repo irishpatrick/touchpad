@@ -26,14 +26,17 @@ import (
     "github.com/gorilla/websocket"
 )
 
-var TEMPLATE_HTML = "index.html"
-var TOKEN_COOKIE_NAME = "token"
+/** Consts **/
+const TEMPLATE_HTML = "index.html"
+const TOKEN_COOKIE_NAME = "token"
 
 /** Flags **/
-var addr = flag.String("addr", "0.0.0.0:8080", "http service address")
+var port = flag.String("port", "8080", "http service port")
+var addr = flag.String("addr", "0.0.0.0", "http service address")
 var siteDir = flag.String("site", "./static/dist/", "static site assets")
 var certFile = flag.String("cert", "", "tls cert file")
 var keyFile = flag.String("key", "", "tlk key file")
+var HOST = *addr + ":" + *port
 
 var homeTemplate = template.Must(template.ParseFiles(path.Join(*siteDir, TEMPLATE_HTML)))
 var upgrader = websocket.Upgrader{}
@@ -95,7 +98,7 @@ func echo (w http.ResponseWriter, r *http.Request) {
 }
 
 func home(w http.ResponseWriter, r *http.Request) {
-    homeTemplate.Execute(w, "ws://"+r.Host+"/echo")
+    homeTemplate.Execute(w, r.Host)
 }
 
 func asset(w http.ResponseWriter, r *http.Request) {
@@ -254,6 +257,7 @@ func main() {
     router := mux.NewRouter()
     router.HandleFunc("/{[a-z]+}.js", asset).Methods("GET")
     router.HandleFunc("/{[a-z]+}.css", asset).Methods("GET")
+    router.HandleFunc("/{[a-z]+}.ico", asset).Methods("GET")
     router.HandleFunc("/bind", bind).Methods("POST")
     router.HandleFunc("/alive", alive).Methods("POST")
     router.HandleFunc("/echo", echo)
@@ -262,9 +266,9 @@ func main() {
     http.Handle("/", router)
 
     if len(*certFile) > 0 && len(*keyFile) > 0 {
-        log.Fatal(http.ListenAndServeTLS(*addr, *certFile, *keyFile, nil))
+        log.Fatal(http.ListenAndServeTLS(HOST, *certFile, *keyFile, nil))
     } else {
-        log.Fatal(http.ListenAndServe(*addr, nil))
+        log.Fatal(http.ListenAndServe(HOST, nil))
     }
 }
 
