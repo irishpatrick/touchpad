@@ -23,8 +23,6 @@ import (
     "github.com/gorilla/mux"
     "github.com/gorilla/websocket"
     "github.com/dgrijalva/jwt-go"
-    //"golang.org/x/oath2"
-    //"golang.org/x/oath2/google"
 )
 
 var homeTemplate = template.Must(template.ParseFiles("./static/touchpad.html"))
@@ -36,19 +34,13 @@ var upgrader = websocket.Upgrader{}
 var isAlive = false
 var aliveTimer = time.Now()
 
-/*var googleOauthConfig = &oauth2.Config{
-    RedirectURL:    "http://" + addr + "/auth/google/callback",
-    ClientID:       os.Getenv("GOOGLE_OAUTH_CLIENT_ID"),
-    ClientSecret:   os.Getenv("GOOGLE_OAUTH_CLIENT_SECRET"),
-    Scopes:         []string{"https://www.googleapis.com/auth/userinfo.email"},
-    Endpoint:       google.Endpoint,
-}*/
-
+// TODO remove
 var users = map[string]string{
     "user1": "password1",
     "user2": "password2",
 }
 
+// TODO remove
 var jwtKey = []byte("my_secret_key")
 
 type Creds struct {
@@ -86,7 +78,6 @@ func echo (w http.ResponseWriter, r *http.Request) {
             break
         }
 
-        //log.Printf("recv %s", message)
         processCommand(message)
         err = c.WriteMessage(mt, message)
         if err != nil {
