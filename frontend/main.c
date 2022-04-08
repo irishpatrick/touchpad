@@ -1,3 +1,5 @@
+#include <assert.h>
+#include <cairo.h>
 #include <curl/curl.h>
 #include <gtk/gtk.h>
 #include <pthread.h>
@@ -6,12 +8,16 @@
 #include <stdlib.h>
 #include <time.h>
 
+#define BUFFER_SIZE 8192
+#define URL_SIZE 256
+
 static pthread_t conn_thread;
 static pthread_mutex_t conn_mutex;
 static bool is_connected;
 static bool conn_thread_kill = false;
-static char qr_url[256];
+static char qr_url[URL_SIZE];
 static GtkWidget* canvas;
+static cairo_surface_t* qr_surf = NULL;
 
 struct conn_thread_data
 {
@@ -31,6 +37,9 @@ static size_t my_read(void* ptr, size_t size, size_t nmemb, FILE* fp)
 
 static void print_hello (GtkWidget* widget, gpointer data)
 {
+    (void)data;
+    (void)widget;
+
     g_print("Hello World\n");
 }
 
@@ -53,6 +62,14 @@ static gboolean draw_callback(GtkWidget* widget, cairo_t* cr, gpointer data)
         gtk_style_context_get_color (ctx, gtk_style_context_get_state (ctx), &color);
         cairo_set_source_rgba (cr, 1.0, 0.0, 0.0, 1.0);
         cairo_fill (cr);
+
+        if (qr_surf == NULL)
+        {
+            printf("gen surf\n");
+        }
+        printf("draw surf\n");
+        cairo_set_source_surface(cr, qr_surf, 0, 0);
+        cairo_paint(cr);
     }
     else
     {
@@ -75,7 +92,8 @@ static void* conn_worker(void* ptr)
         struct conn_thread_data* data = (struct conn_thread_data*)ptr;
         gchar* url = data->endpt;
         FILE* fp = tmpfile();
-        char buffer[8192];
+        char buffer[BUFFER_SIZE];
+        size_t nread;
 
         curl_easy_setopt(curl, CURLOPT_URL, url);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
@@ -87,8 +105,9 @@ static void* conn_worker(void* ptr)
             curl_easy_perform(curl);
 
             fseek(fp, 0L, SEEK_SET);
-            fread(buffer, 1, 8192, fp);
-            buffer[8191] = 0;
+            nread = fread(buffer, 1, BUFFER_SIZE, fp);
+            (void)nread;
+            buffer[BUFFER_SIZE - 1] = 0;
             if (strlen(buffer) < 1)
             {
                 printf("no response!\n");
@@ -97,8 +116,10 @@ static void* conn_worker(void* ptr)
             else
             {
                 pthread_mutex_lock(&conn_mutex);
+
                 is_connected = true;
-                strncpy(qr_url, buffer, 256);
+                strncpy(qr_url, buffer, URL_SIZE);
+                
                 pthread_mutex_unlock(&conn_mutex);
 
                 gtk_widget_queue_draw(canvas);
@@ -158,6 +179,7 @@ static void activate(GtkApplication* app, gpointer user_data)
 
 int main(int argc, char** argv)
 {
+    qr_surf = generate_qr_code("https://google.com");
     GtkApplication* app;
     int status;
     int ret;
@@ -179,6 +201,11 @@ int main(int argc, char** argv)
         pthread_mutex_unlock(&conn_mutex);
     }
     pthread_join(conn_thread, NULL);
+
+    if (qr_surf != NULL)
+    {
+        cairo_surface_destroy(qr_surf);
+    }
 
     return status;
 }

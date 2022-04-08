@@ -4,9 +4,11 @@ project(
   default_options: [
     'werror=false',
     'warning_level=3',
-    'buildtype=debugoptimized'
+    'buildtype=debug'
   ]
 )
+
+add_global_arguments('-g', language : 'c')
 
 src = [
   'main.c',
