@@ -12,6 +12,7 @@ import (
     "io/ioutil"
     "html/template"
     "log"
+    "net"
     "net/http"
     "os"
     "os/signal"
@@ -66,6 +67,24 @@ type Claims struct {
 func ResetAliveTimer() {
     isAlive = true
     aliveTimer = time.Now().Add(1 * time.Minute)
+}
+
+func GetOutboundIP() net.IP {
+    conn, err := net.Dial("udp", "8.8.8.8:80")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    defer conn.Close()
+
+    localAddr := conn.LocalAddr().(*net.UDPAddr)
+
+    return localAddr.IP
+}
+
+func url(w http.ResponseWriter, r *http.Request) {
+    ipStr := GetOutboundIP().String()
+    w.Write([]byte(ipStr + ":" + *port))
 }
 
 func echo (w http.ResponseWriter, r *http.Request) {
@@ -258,6 +277,7 @@ func main() {
     router.HandleFunc("/{[a-z]+}.js", asset).Methods("GET")
     router.HandleFunc("/{[a-z]+}.css", asset).Methods("GET")
     router.HandleFunc("/{[a-z]+}.ico", asset).Methods("GET")
+    router.HandleFunc("/url", url).Methods("GET")
     router.HandleFunc("/bind", bind).Methods("POST")
     router.HandleFunc("/alive", alive).Methods("POST")
     router.HandleFunc("/echo", echo)
