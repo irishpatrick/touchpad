@@ -11,6 +11,13 @@ static pthread_mutex_t conn_mutex;
 static bool is_connected;
 static bool conn_thread_kill = false;
 static char qr_url[256];
+static GtkWidget* canvas;
+
+struct conn_thread_data
+{
+    GtkWidget* darea;
+    const char* endpt;
+};
 
 static size_t my_write(void* ptr, size_t size, size_t nmemb, FILE* fp)
 {
@@ -29,11 +36,30 @@ static void print_hello (GtkWidget* widget, gpointer data)
 
 static gboolean draw_callback(GtkWidget* widget, cairo_t* cr, gpointer data)
 {
+    guint width;
+    guint height;
+    GdkRGBA color;
+    GtkStyleContext* ctx;
+    
+    ctx = gtk_widget_get_style_context(widget);
+    width = gtk_widget_get_allocated_width(widget);
+    height = gtk_widget_get_allocated_height(widget);
+
+    gtk_render_background(ctx, cr, 0, 0, width, height);
+
     if (is_connected)
     {
+        cairo_arc (cr, width / 2.0, height / 2.0, MIN (width, height) / 2.0, 0, 2 * G_PI);
+        gtk_style_context_get_color (ctx, gtk_style_context_get_state (ctx), &color);
+        cairo_set_source_rgba (cr, 1.0, 0.0, 0.0, 1.0);
+        cairo_fill (cr);
     }
     else
     {
+        cairo_arc (cr, width / 2.0, height / 2.0, MIN (width, height) / 2.0, 0, 2 * G_PI);
+        gtk_style_context_get_color (ctx, gtk_style_context_get_state (ctx), &color);
+        cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 1.0);
+        cairo_fill (cr);
     }
 
     return FALSE;
@@ -46,7 +72,8 @@ static void* conn_worker(void* ptr)
     curl = curl_easy_init();
     if (curl)
     {
-        gchar* url = ptr;
+        struct conn_thread_data* data = (struct conn_thread_data*)ptr;
+        gchar* url = data->endpt;
         FILE* fp = tmpfile();
         char buffer[8192];
 
@@ -74,6 +101,8 @@ static void* conn_worker(void* ptr)
                 strncpy(qr_url, buffer, 256);
                 pthread_mutex_unlock(&conn_mutex);
 
+                gtk_widget_queue_draw(canvas);
+
                 break;
             }
 
@@ -98,7 +127,6 @@ static void activate(GtkApplication* app, gpointer user_data)
 {
     GtkWidget* window;
     GtkWidget* button;
-    GtkWidget* canvas;
     GtkWidget* box;
 
     // init curl
@@ -124,6 +152,8 @@ static void activate(GtkApplication* app, gpointer user_data)
 
     gtk_widget_show_all(window);
     gtk_window_present(GTK_WINDOW(window));
+
+    gtk_widget_queue_draw(canvas);
 }
 
 int main(int argc, char** argv)
@@ -132,7 +162,10 @@ int main(int argc, char** argv)
     int status;
     int ret;
 
-    ret = pthread_create(&conn_thread, NULL, conn_worker, (void*)"http://localhost:8080/url");
+    struct conn_thread_data data;
+    data.endpt = "http://localhost:8080/url";
+    data.darea = canvas;
+    ret = pthread_create(&conn_thread, NULL, conn_worker, (void*)(&data));
 
     app = gtk_application_new("org.gtk.example", G_APPLICATION_FLAGS_NONE);
     g_signal_connect(app, "activate", G_CALLBACK(activate), NULL);
