@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include "qrcodegen.h"
 
 #define BUFFER_SIZE 8192
 #define URL_SIZE 256
@@ -65,10 +66,12 @@ static gboolean draw_callback(GtkWidget* widget, cairo_t* cr, gpointer data)
 
         if (qr_surf == NULL)
         {
-            printf("gen surf\n");
+            qr_surf = generate_qr_code(qr_url);
         }
-        printf("draw surf\n");
+        double sc = 10.0;
+        cairo_scale(cr, sc, sc);
         cairo_set_source_surface(cr, qr_surf, 0, 0);
+        cairo_pattern_set_filter(cairo_get_source(cr), CAIRO_FILTER_NEAREST);
         cairo_paint(cr);
     }
     else
@@ -179,7 +182,7 @@ static void activate(GtkApplication* app, gpointer user_data)
 
 int main(int argc, char** argv)
 {
-    qr_surf = generate_qr_code("https://google.com");
+    //qr_surf = generate_qr_code("https://google.com");
     GtkApplication* app;
     int status;
     int ret;

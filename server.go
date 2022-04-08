@@ -84,7 +84,7 @@ func GetOutboundIP() net.IP {
 
 func url(w http.ResponseWriter, r *http.Request) {
     ipStr := GetOutboundIP().String()
-    w.Write([]byte(ipStr + ":" + *port))
+    w.Write([]byte("http://" + ipStr + ":" + *port))
 }
 
 func echo (w http.ResponseWriter, r *http.Request) {
