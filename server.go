@@ -12,6 +12,7 @@ import (
     "io/ioutil"
     "html/template"
     "log"
+    "net"
     "net/http"
     "os"
     "os/signal"
@@ -32,10 +33,12 @@ var TOKEN_COOKIE_NAME = "token"
 var TOKEN_TIME_VALID = 5 * time.Minute;
 
 /** Flags **/
-var addr = flag.String("addr", "0.0.0.0:8080", "http service address")
+var port = flag.String("port", "8080", "http service port")
+var addr = flag.String("addr", "0.0.0.0", "http service address")
 var siteDir = flag.String("site", "./static/dist/", "static site assets")
 var certFile = flag.String("cert", "", "tls cert file")
 var keyFile = flag.String("key", "", "tlk key file")
+var HOST = *addr + ":" + *port
 
 var homeTemplate = template.Must(template.ParseFiles(path.Join(*siteDir, TEMPLATE_HTML)))
 var upgrader = websocket.Upgrader{}
@@ -65,6 +68,24 @@ type Claims struct {
 func ResetAliveTimer() {
     isAlive = true
     aliveTimer = time.Now().Add(1 * time.Minute)
+}
+
+func GetOutboundIP() net.IP {
+    conn, err := net.Dial("udp", "8.8.8.8:80")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    defer conn.Close()
+
+    localAddr := conn.LocalAddr().(*net.UDPAddr)
+
+    return localAddr.IP
+}
+
+func url(w http.ResponseWriter, r *http.Request) {
+    ipStr := GetOutboundIP().String()
+    w.Write([]byte("http://" + ipStr + ":" + *port))
 }
 
 func echo (w http.ResponseWriter, r *http.Request) {
@@ -97,7 +118,7 @@ func echo (w http.ResponseWriter, r *http.Request) {
 }
 
 func home(w http.ResponseWriter, r *http.Request) {
-    homeTemplate.Execute(w, "ws://"+r.Host+"/echo")
+    homeTemplate.Execute(w, r.Host)
 }
 
 func asset(w http.ResponseWriter, r *http.Request) {
@@ -310,6 +331,8 @@ func main() {
     router := mux.NewRouter()
     router.HandleFunc("/{[a-z]+}.js", asset).Methods("GET")
     router.HandleFunc("/{[a-z]+}.css", asset).Methods("GET")
+    router.HandleFunc("/{[a-z]+}.ico", asset).Methods("GET")
+    router.HandleFunc("/url", url).Methods("GET")
     router.HandleFunc("/bind", bind).Methods("POST")
     router.HandleFunc("/alive", alive).Methods("POST")
     router.HandleFunc("/renew", renew).Methods("POST")
@@ -319,9 +342,9 @@ func main() {
     http.Handle("/", router)
 
     if len(*certFile) > 0 && len(*keyFile) > 0 {
-        log.Fatal(http.ListenAndServeTLS(*addr, *certFile, *keyFile, nil))
+        log.Fatal(http.ListenAndServeTLS(HOST, *certFile, *keyFile, nil))
     } else {
-        log.Fatal(http.ListenAndServe(*addr, nil))
+        log.Fatal(http.ListenAndServe(HOST, nil))
     }
 }
 

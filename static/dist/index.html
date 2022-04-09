@@ -4,10 +4,10 @@
         <meta charset="utf-8">
         <link rel="stylesheet" href="index.css">
         <script>
-            ADDR = "{{.}}"
-            BIND_ENDPOINT = "http://" + ADDR + "/bind"
-            ALIVE_ENDPOINT = "http://" + ADDR + "/alive"
-            RENEW_ENDPOINT = "http://" + ADDR + "/renew"
+            HOST = "{{.}}"
+            ADDR = "ws://" + HOST + "/echo"
+            BIND_ENDPOINT = "http://" + HOST + "/bind"
+            ALIVE_ENDPOINT = "http://" + HOST + "/alive"
         </script>
         <script type="text/javascript" src="main.bundle.js"></script>
     </head>

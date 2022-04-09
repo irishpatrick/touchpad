@@ -1,21 +1,5 @@
 const PRECISION = 5
 
-class Overlay
-{
-}
-
-class TransparentOverlay extends Overlay
-{
-}
-
-class TouchpadOverlay extends Overlay
-{
-}
-
-class ControllerOverlay extends Overlay
-{
-}
-
 function aliveRequest()
 {
     var xhr = new XMLHttpRequest()
