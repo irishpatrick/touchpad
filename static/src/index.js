@@ -23,6 +23,13 @@ function aliveRequest()
     xhr.send()
 }
 
+function renewRequest()
+{
+    var xhr = new XMLHttpRequest()
+    xhr.open("POST", RENEW_ENDPOINT, true)
+    xhr.send()
+}
+
 function bindRequest(un, pw)
 {
     var xhr = new XMLHttpRequest()

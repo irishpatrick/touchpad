@@ -26,8 +26,10 @@ import (
     "github.com/gorilla/websocket"
 )
 
+/** Token Parameters **/
 var TEMPLATE_HTML = "index.html"
 var TOKEN_COOKIE_NAME = "token"
+var TOKEN_TIME_VALID = 5 * time.Minute;
 
 /** Flags **/
 var addr = flag.String("addr", "0.0.0.0:8080", "http service address")
@@ -134,7 +136,7 @@ func bind(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    expirationTime := time.Now().Add(5 * time.Minute)
+    expirationTime := time.Now().Add(TOKEN_TIME_VALID)
     claims := &Claims{
         Username: creds.Username,
         StandardClaims: jwt.StandardClaims{
@@ -197,6 +199,60 @@ func alive(w http.ResponseWriter, r *http.Request) {
     ResetAliveTimer()
 }
 
+func renew(w http.ResponseWriter, r *http.Request) {
+    c, err := r.Cookie(TOKEN_COOKIE_NAME)
+    if err != nil {
+        if err == http.ErrNoCookie {
+            w.WriteHeader(http.StatusUnauthorized)
+            isAlive = false;
+            return
+        }
+
+        w.WriteHeader(http.StatusBadRequest)
+        isAlive = false;
+        return
+    }
+
+    tokenStr := c.Value
+    claims := &Claims{}
+
+    token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
+        return jwtKey, nil
+    })
+    if err != nil {
+        if err == jwt.ErrSignatureInvalid {
+            w.WriteHeader(http.StatusUnauthorized)
+            isAlive = false;
+            return
+        }
+
+        w.WriteHeader(http.StatusBadRequest)
+        isAlive = false;
+        return
+    }
+
+    if !token.Valid {
+        w.WriteHeader(http.StatusUnauthorized)
+        isAlive = false;
+        return
+    }
+
+    expirationTime := time.Now().Add(TOKEN_TIME_VALID)
+    claims.ExpiresAt = expirationTime.Unix()
+    token = jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+    tokenStr, err = token.SignedString(jwtKey)
+    if err != nil {
+        w.WriteHeader(http.StatusInternalServerError)
+        return
+    }
+
+    http.SetCookie(w, &http.Cookie{
+        Name: TOKEN_COOKIE_NAME,
+        Value: tokenStr,
+        Expires: expirationTime,
+    })
+}
+
 func processCommand(msg []byte) {
     if len(msg) < 2 {
         return
@@ -256,6 +312,7 @@ func main() {
     router.HandleFunc("/{[a-z]+}.css", asset).Methods("GET")
     router.HandleFunc("/bind", bind).Methods("POST")
     router.HandleFunc("/alive", alive).Methods("POST")
+    router.HandleFunc("/renew", renew).Methods("POST")
     router.HandleFunc("/echo", echo)
     router.HandleFunc("/", home)
 
