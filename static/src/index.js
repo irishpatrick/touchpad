@@ -1,4 +1,5 @@
 const PRECISION = 5
+/** endpoint constants found in index.html **/
 
 function aliveRequest()
 {
@@ -207,7 +208,8 @@ function fromScreen(sx, sy)
 
 window.addEventListener("load", (e) => 
 {
-    var intervalID = setInterval(aliveRequest, 50 * 1000)
+    var aliveIntervalID = setInterval(aliveRequest, 60 * 1000)
+    var renewIntervalID = setInterval(renewRequest, 240 * 1000)
     var canvas = document.getElementById("canvas")
     canvas.width = window.innerWidth
     canvas.height = window.innerHeight
