@@ -1,4 +1,5 @@
 #!/bin/bash
 
-LD_LIBRARY_PATH=`pwd`/driver/build ./touchpad $@
+./frontend/build/frontend > /dev/null & disown
+LD_LIBRARY_PATH=`pwd`/driver/build-debug ./touchpad $@
 
