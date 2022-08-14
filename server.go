@@ -98,6 +98,7 @@ func echo (w http.ResponseWriter, r *http.Request) {
 
     for {
         if time.Now().Unix() > aliveTimer.Unix() {
+            log.Printf("token expired: current_time=%d, expiration_time=%d\n", time.Now().Unix(), aliveTimer.Unix())
             isAlive = false;
             break
         }
@@ -165,6 +166,7 @@ func bind(w http.ResponseWriter, r *http.Request) {
         },
     }
 
+    ResetAliveTimer()
     token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
     tokenStr, err := token.SignedString(jwtKey)
     if err != nil {
@@ -276,6 +278,7 @@ func renew(w http.ResponseWriter, r *http.Request) {
 
 func processCommand(msg []byte) {
     if len(msg) < 2 {
+        log.Println("bad message format")
         return
     }
 
@@ -293,11 +296,11 @@ func processCommand(msg []byte) {
             continue
         }
 
-        dx, err := strconv.Atoi(numbers[1])
+        dx, err := strconv.ParseFloat(numbers[1], 64)
         if err != nil {
             panic(err)
         }
-        dy, err := strconv.Atoi(numbers[2])
+        dy, err := strconv.ParseFloat(numbers[2], 64)
         if err != nil {
             panic(err)
         }
@@ -321,13 +324,16 @@ func main() {
     flag.Parse()
     log.SetFlags(0)
 
+    log.Println("creating signal handlers...")
     setupHandlers()
 
+    log.Println("creating virtual device...")
     errno := C.driver_create_device()
     if errno != 0 {
         log.Fatal("cannot create device! err=", errno)
     }
 
+    log.Println("building routes...")
     router := mux.NewRouter()
     router.HandleFunc("/{[a-z]+}.js", asset).Methods("GET")
     router.HandleFunc("/{[a-z]+}.css", asset).Methods("GET")
@@ -342,8 +348,10 @@ func main() {
     http.Handle("/", router)
 
     if len(*certFile) > 0 && len(*keyFile) > 0 {
+        log.Printf("serving at https://%s\n", HOST)
         log.Fatal(http.ListenAndServeTLS(HOST, *certFile, *keyFile, nil))
     } else {
+        log.Printf("serving at http://%s\n", HOST)
         log.Fatal(http.ListenAndServe(HOST, nil))
     }
 }

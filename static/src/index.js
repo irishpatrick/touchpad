@@ -216,6 +216,8 @@ window.addEventListener("load", (e) =>
     var mouseState = new MouseState()
     var touchState = new TouchState()
 
+    bindRequest("user1", "password1")
+
     sock.onopen = function(e)
     {
     }
