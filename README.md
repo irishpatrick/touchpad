@@ -1,6 +1,14 @@
 # touchpad
 
-## Build Instructions
+## How to Build
 
-- `go get`
-- `go build`
+```
+./bootstrap.sh
+./build.sh [clean,prod]
+```
+
+## How to Run
+
+```
+./run.sh [prod]
+```
