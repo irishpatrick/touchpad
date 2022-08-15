@@ -6,7 +6,6 @@ package main
 import "C"
 
 import (
-    "encoding/json"
     "flag"
     "fmt"
     "io/ioutil"
@@ -144,23 +143,21 @@ func asset(w http.ResponseWriter, r *http.Request) {
 }
 
 func bind(w http.ResponseWriter, r *http.Request) {
-    var creds Creds
+    r.ParseForm()
 
-    err := json.NewDecoder(r.Body).Decode(&creds)
-    if err != nil {
-        w.WriteHeader(http.StatusBadRequest)
-        return
-    }
+    uname := r.FormValue("username")
+    pass := r.FormValue("password")
+    fmt.Printf("%s,%s\n", uname, pass)
 
-    expectedPwd, ok := users[creds.Username]
-    if !ok || expectedPwd != creds.Password {
+    expectedPwd, ok := users[uname]
+    if !ok || expectedPwd != pass {
         w.WriteHeader(http.StatusUnauthorized)
         return
     }
 
     expirationTime := time.Now().Add(TOKEN_TIME_VALID)
     claims := &Claims{
-        Username: creds.Username,
+        Username: uname,
         StandardClaims: jwt.StandardClaims{
             ExpiresAt: expirationTime.Unix(),
         },
@@ -296,16 +293,24 @@ func processCommand(msg []byte) {
             continue
         }
 
-        dx, err := strconv.ParseFloat(numbers[1], 64)
+        fingerNum, err := strconv.ParseUint(numbers[0], 10, 8) // base 10, 8 bits
+        if err != nil {
+            log.Printf("error parsing: %v\n", numbers)
+            panic(err)
+        }
+
+        dx, err := strconv.ParseFloat(numbers[1], 32)
         if err != nil {
             panic(err)
         }
-        dy, err := strconv.ParseFloat(numbers[2], 64)
+        dy, err := strconv.ParseFloat(numbers[2], 32)
         if err != nil {
             panic(err)
         }
 
-        C.driver_mouse_rel(C.int(dx), C.int(dy))
+        if fingerNum == 0 {
+            C.driver_mouse_rel(C.int(dx), C.int(dy))
+        }
     }
 }
 

@@ -5,3 +5,50 @@ html, body
     padding: 0 !important;
 }
 
+.hidden
+{
+    display: none;
+}
+
+.popup
+{
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    top: 25%;
+    left: 25%;
+    min-width: 50%;
+    min-height: 50%;
+    border: 3px solid black;
+    padding: 10px;
+}
+
+.popup-item
+{
+    display: flex;
+    margin: auto;
+    padding: 10px;
+    text-align: center;
+    width: 100%;
+}
+
+h3
+{
+    justify-content: center;
+}
+
+label
+{
+    min-width: 20%;
+}
+
+input
+{
+    min-width: 70%;
+}
+
+button
+{
+    justify-content: center;
+}
+

@@ -1,29 +1,42 @@
 const PRECISION = 5
 /** endpoint constants found in index.html **/
 
+function showLogin(visible)
+{
+    let elem = document.getElementById("login")
+    if (visible)
+    {
+        element.classList.remove("hidden")
+    }
+    else
+    {
+        element.classList.append("hidden")
+    }
+}
+
 function aliveRequest()
 {
     var xhr = new XMLHttpRequest()
-    xhr.open("POST", ALIVE_ENDPOINT, true)
+    xhr.open("POST", ALIVE_ENDPOINT, false)
     xhr.send()
 }
 
 function renewRequest()
 {
     var xhr = new XMLHttpRequest()
-    xhr.open("POST", RENEW_ENDPOINT, true)
+    xhr.open("POST", RENEW_ENDPOINT, false)
     xhr.send()
 }
 
-function bindRequest(un, pw)
+function bindRequest(formElem)
 {
+
     var xhr = new XMLHttpRequest()
-    xhr.open("POST", BIND_ENDPOINT, true)
-    xhr.setRequestHeader("Content-Type", "application/json")
-    xhr.send(JSON.stringify({
-        username: un,
-        password: pw
-    }))
+    xhr.open("POST", BIND_ENDPOINT, false)
+    var formData = new FormData(formElem)
+    formData.append("test", "hello world")
+    //xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded')
+    xhr.send(formData)
 }
 
 function isSockOpen(sock)
@@ -208,6 +221,11 @@ function fromScreen(sx, sy)
 
 window.addEventListener("load", (e) => 
 {
+    document.getElementById("login").addEventListener("submit", (e) => {
+        e.preventDefault() // don't submit
+        console.log("bind")
+        bindRequest(document.getElementById("login"))
+    })
     var aliveIntervalID = setInterval(aliveRequest, 60 * 1000)
     var renewIntervalID = setInterval(renewRequest, 240 * 1000)
     var canvas = document.getElementById("canvas")
@@ -215,10 +233,8 @@ window.addEventListener("load", (e) =>
     canvas.height = window.innerHeight
     var ctx = canvas.getContext("2d")
     var sock = new WebSocket(ADDR)
-    var mouseState = new MouseState()
+    //var mouseState = new MouseState()
     var touchState = new TouchState()
-
-    bindRequest("user1", "password1")
 
     sock.onopen = function(e)
     {
@@ -248,8 +264,8 @@ window.addEventListener("load", (e) =>
 
     canvas.addEventListener("mousemove", (e) =>
     {
-        mouseState.update(e)
-        mouseState.broadcast(sock)
+        //mouseState.update(e)
+        //mouseState.broadcast(sock)
     }, false)
 
     canvas.addEventListener("touchstart", (e) =>

@@ -8,11 +8,28 @@
             ADDR = "ws://" + HOST + "/echo"
             BIND_ENDPOINT = "http://" + HOST + "/bind"
             ALIVE_ENDPOINT = "http://" + HOST + "/alive"
+            RENEW_ENDPOINT = "http://" + HOST + "/renew"
         </script>
         <script type="text/javascript" src="main.bundle.js"></script>
     </head>
     <body>
         <canvas id="canvas">Not Supported :(</canvas>
+        <div class="popup hidden">
+            <h3 class="popup-item">Login</h3>
+            <form name="login" id="login">
+                <div class="popup-item">
+                    <label for="username"><b>Username</b></label>
+                    <input type="text" name="username" required>
+                </div>
+
+                <div class="popup-item">
+                    <label for="password"><b>Password</b></label>
+                    <input type="password" name="password" required>
+                </div>
+
+                <button class="popup-item" type="submit">Login</button>
+            </form>
+        </div>
     </body>
 </html>
 
