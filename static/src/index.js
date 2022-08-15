@@ -1,3 +1,5 @@
+const axios = require("axios").default
+
 const PRECISION = 5
 /** endpoint constants found in index.html **/
 
