@@ -143,7 +143,8 @@ func asset(w http.ResponseWriter, r *http.Request) {
 }
 
 func bind(w http.ResponseWriter, r *http.Request) {
-    r.ParseForm()
+    r.Body = http.MaxBytesReader(w, r.Body, 32 << 20 + 512)
+    r.ParseMultipartForm(32 << 20) // 32 Mb
 
     uname := r.FormValue("username")
     pass := r.FormValue("password")
