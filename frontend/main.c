@@ -182,7 +182,6 @@ static void activate(GtkApplication* app, gpointer user_data)
 
 int main(int argc, char** argv)
 {
-    //qr_surf = generate_qr_code("https://google.com");
     GtkApplication* app;
     int status;
     int ret;

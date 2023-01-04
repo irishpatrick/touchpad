@@ -5,3 +5,4 @@ touchpad
 *.pem
 **/node_modules/*
 **/dist/*.js
+.idea
