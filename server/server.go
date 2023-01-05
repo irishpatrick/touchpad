@@ -1,7 +1,7 @@
 package main
 
 // #cgo CFLAGS: -I../driver
-// #cgo LDFLAGS: -L../driver/build -ldriver
+// #cgo LDFLAGS: -L../driver/artifacts -ldriver
 // #include "driver.h"
 import "C"
 

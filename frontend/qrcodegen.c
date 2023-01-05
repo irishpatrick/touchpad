@@ -53,7 +53,6 @@ cairo_surface_t* generate_qr_code(const char* data)
     
     cairo_surface_flush(surf);
     cairo_surface_mark_dirty(surf);
-    //cairo_surface_write_to_png(surf, "./out.png");
 
     return surf;
 }

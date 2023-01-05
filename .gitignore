@@ -1,8 +1,10 @@
 *.swp
 *.swo
 touchpad
+*.exe
 **/build*/*
 *.pem
 **/node_modules/*
 **/dist/*.js
 .idea
+artifacts

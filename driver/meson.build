@@ -9,7 +9,7 @@ project(
 )
 
 src = [
-  'driver.c'
+  'driver_linux.c'
 ]
 
 deps = [

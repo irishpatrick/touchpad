@@ -101,6 +101,7 @@ int driver_report(void)
 
 void driver_destroy_device(void)
 {
+    driver_report();
     libevdev_uinput_destroy(uidev);
 }
 

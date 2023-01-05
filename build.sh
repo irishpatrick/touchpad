@@ -18,7 +18,7 @@ if [ "$1" = "clean" ]; then
     go clean
 elif [ "$1" = "prod" ]; then
     # build driver
-    ninja -C driver/build-release
+    ninja -C driver/build-release driver install
 
     # build frontend
     ninja -C frontend/build-release
@@ -33,7 +33,7 @@ elif [ "$1" = "prod" ]; then
     go build -ldflags "-s -w"
 else
     # build driver
-    ninja -C driver/build-debug
+    ninja -C driver/build-debug driver install
 
     # build frontend
     ninja -C frontend/build-debug
