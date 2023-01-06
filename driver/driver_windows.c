@@ -48,7 +48,7 @@ int driver_mouse_btn(int left, int middle, int right)
 int driver_report(void)
 {
     int result = 0;
-    UINT num_sent = SendInput(input_queue_size, input_queue, sizeof(input_queue));
+    UINT num_sent = SendInput(input_queue_size, input_queue, input_queue_size * sizeof(INPUT));
     if (num_sent != input_queue_size)
     {
         result = 1;

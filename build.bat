@@ -24,6 +24,7 @@ set GOOS=windows
 set GOARCH=amd64
 set CGO_ENABLED=1
 echo building server...
+del touchpad.exe
 go build
 cd ..
 goto EXIT
@@ -38,6 +39,7 @@ set GOOS=windows
 set GOARCH=amd64
 set CGO_ENABLED=1
 echo building production server...
+del touchpad.exe
 go build -ldflags "-s -w"
 cd ..
 goto EXIT

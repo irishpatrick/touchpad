@@ -199,6 +199,12 @@ class TouchState
         let msg = "";
         let delta_x = 0;
         let delta_y = 0;
+
+        if (this.ongoing.length == 0)
+        {
+            return;
+        }
+
         for (let i = 0; i < this.ongoing.length; i++)
         {
             delta_x = this.ongoing[i].pageX - this.last[i].pageX;

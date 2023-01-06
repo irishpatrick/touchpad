@@ -99,7 +99,7 @@ func echo (w http.ResponseWriter, r *http.Request) {
         if time.Now().Unix() > aliveTimer.Unix() {
             log.Printf("token expired: current_time=%d, expiration_time=%d\n", time.Now().Unix(), aliveTimer.Unix())
             isAlive = false;
-            break
+            //break
         }
 
         mt, message, err := c.ReadMessage()
@@ -275,7 +275,7 @@ func renew(w http.ResponseWriter, r *http.Request) {
 }
 
 func processCommand(msg []byte) {
-    if len(msg) < 2 {
+    if len(msg) < 3 {
         log.Println("bad message format")
         return
     }
@@ -291,6 +291,7 @@ func processCommand(msg []byte) {
 
         numbers := strings.Split(tmp, ",")
         if len(numbers) != 3 {
+            log.Printf("error parsing: %v\n", numbers)
             continue
         }
 
@@ -310,7 +311,10 @@ func processCommand(msg []byte) {
         }
 
         if fingerNum == 0 {
-            C.driver_mouse_rel(C.int(dx), C.int(dy))
+            err := C.driver_mouse_rel(C.int(dx), C.int(dy))
+            if err != 0 {
+                log.Printf("driver_mouse_rel error: %v\n", err)
+            }
         }
     }
 }
