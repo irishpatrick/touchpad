@@ -14,6 +14,16 @@
 static struct libevdev* dev = NULL;
 static struct libevdev_uinput* uidev = NULL;
 
+static void start_event_loop_thread(void)
+{
+
+}
+
+static void stop_event_loop_thread(void)
+{
+
+}
+
 int driver_create_device(void)
 {
     int err;
@@ -35,6 +45,8 @@ int driver_create_device(void)
     }
 
     sleep(1);
+
+    start_event_loop_thread();
 
     return 0;
 }
@@ -102,6 +114,7 @@ int driver_report(void)
 void driver_destroy_device(void)
 {
     driver_report();
+    stop_event_loop_thread();
     libevdev_uinput_destroy(uidev);
 }
 

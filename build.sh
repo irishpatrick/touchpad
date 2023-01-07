@@ -30,6 +30,7 @@ elif [ "$1" = "prod" ]; then
 
     # build server
     echo 'building server...'
+    go clean
     go build -ldflags "-s -w"
 else
     # build driver
@@ -45,6 +46,7 @@ else
 
     # build server
     echo 'building server...'
+    go clean
     go build
 fi
 
