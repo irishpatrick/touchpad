@@ -16,32 +16,32 @@ goto EXIT
 
 :BUILD
 ninja -C driver/build-debug driver install
-cd static
-call npm run build
-cd ..
+call npm run --prefix static build
+
 cd server
 set GOOS=windows
 set GOARCH=amd64
 set CGO_ENABLED=1
 echo building server...
 go clean
-go build
+go build -tags debug
 cd ..
 goto EXIT
 
 :PROD
 ninja -C driver/build-release driver install
-cd static
-call npm run build-prod
-cd ..
+call npm run --prefix static build-prod
+
+cp -r static/dist server/server
 cd server
 set GOOS=windows
 set GOARCH=amd64
 set CGO_ENABLED=1
 echo building production server...
 go clean
-go build -ldflags "-s -w"
+go build -tags release -ldflags "-s -w"
 cd ..
+rmdir /Q /S .\server\server\dist\
 goto EXIT
 
 :EXIT

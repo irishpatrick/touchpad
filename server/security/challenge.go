@@ -9,6 +9,8 @@ import (
 	"math/rand"
 	"strconv"
 	"time"
+
+	"github.com/gen2brain/beeep"
 )
 
 var algorithm crypto.Hash = crypto.SHA256
@@ -39,10 +41,19 @@ func NewChallenge() Challenge {
 		log.Panic(err)
 	}
 
+	err = beeep.Notify("touchpad", "OTP: "+answer, "")
+	if err != nil {
+		log.Panic(err)
+	}
+
 	return Challenge{
 		Answer:             answer,
 		AnswerDigestSigned: hex.EncodeToString(signature),
 	}
+}
+
+func (chal *Challenge) EraseAnswer() {
+	chal.Answer = ""
 }
 
 func (chal *Challenge) VerifySolution() bool {

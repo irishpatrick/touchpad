@@ -26,6 +26,7 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 
 func AuthLoginChallengeHandler(w http.ResponseWriter, r *http.Request) {
 	challenge := security.NewChallenge()
+	challenge.EraseAnswer()
 
 	data, err := json.Marshal(challenge)
 	if err != nil {
