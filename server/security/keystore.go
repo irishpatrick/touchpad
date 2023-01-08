@@ -6,33 +6,25 @@ import (
 	"crypto/rsa"
 )
 
-var jwtKey *rsa.PrivateKey
 var challengeKey *rsa.PrivateKey
+var tokenHMACKey []byte
 
 var keyBits int = 4096
+var symmetricKeyBits int = 256
 
 func GenerateKeys() {
 	key, err := rsa.GenerateKey(rand.Reader, keyBits)
 	if err != nil {
 		panic(err)
 	}
-
-	jwtKey = key
-
-	key, err = rsa.GenerateKey(rand.Reader, keyBits)
-	if err != nil {
-		panic(err)
-	}
-
 	challengeKey = key
+
+	tokenHMACKey := make([]byte, symmetricKeyBits/8)
+	rand.Reader.Read(tokenHMACKey)
 }
 
-func GetJWTPublicKey() crypto.PublicKey {
-	return jwtKey.Public()
-}
-
-func GetJWTPrivateKey() *rsa.PrivateKey {
-	return jwtKey
+func GetTokenHMACKey() []byte {
+	return tokenHMACKey
 }
 
 func GetChallengePublicKey() crypto.PublicKey {

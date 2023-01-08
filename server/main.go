@@ -91,7 +91,7 @@ func echo(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		go processCommand(message)
+		processCommand(message)
 
 		err = c.WriteMessage(mt, message)
 		if err != nil {
@@ -303,6 +303,7 @@ func main() {
 
 	log.Println("generating keys...")
 	security.GenerateKeys()
+	security.GenerateSessionID()
 
 	log.Println("creating signal handlers...")
 	setupHandlers()
@@ -320,6 +321,8 @@ func main() {
 	router.HandleFunc("/alive", alive).Methods("POST")
 	router.HandleFunc("/renew", renew).Methods("POST")
 	router.HandleFunc("/echo", echo)
+	router.HandleFunc("/auth/challenge", server.AuthLoginChallengeHandler).Methods("GET")
+	router.HandleFunc("/auth/response", server.AuthLoginResponseHandler).Methods("POST")
 	router.HandleFunc("/", home)
 	router.PathPrefix("/").Handler(server.NewFileServer(*siteDir))
 

@@ -36,17 +36,10 @@ func AuthLoginChallengeHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func AuthLoginResponseHandler(w http.ResponseWriter, r *http.Request) {
-	var body []byte
-	bodyLen, err := r.Body.Read(body)
-	if err != nil || bodyLen == 0 {
-		http.Error(w, "bad request: cannot read body", http.StatusBadRequest)
-		return
-	}
-
 	var challenge security.Challenge
-	err = json.Unmarshal(body, &challenge)
+	err := json.NewDecoder(r.Body).Decode(&challenge)
 	if err != nil {
-		http.Error(w, "bad request: unable to unmarshal", http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 
 	if !challenge.VerifySolution() {
@@ -54,7 +47,7 @@ func AuthLoginResponseHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.SetCookie(w, &http.Cookie{
-		Name:  "",
-		Value: "",
+		Name:  "token",
+		Value: security.IssueJwtToken(),
 	})
 }
