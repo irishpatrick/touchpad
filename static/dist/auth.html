@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Enter OTP</title>
+        <script>
+            function load(event) {
+                let otpField = document.getElementById("otp")
+                otpField.value = "";
+                let resendBtn = document.getElementById("resend")
+                let submitBtn = document.getElementById("submit")
+                submitBtn.disabled = true;
+                let ticket = null
+
+                resendBtn.onclick = (event) => {
+                    var xhr = new XMLHttpRequest()
+                    xhr.onreadystatechange = () => {
+                        if (xhr.readyState == 1) {
+                            xhr.send()
+                        }
+                        if (xhr.readyState == 4) {
+                            otpField.value = "";
+                            ticket = JSON.parse(xhr.response);
+                            submitBtn.disabled = ticket === null || otpField.value.length != 4;
+                        }
+                    }
+                    xhr.open("GET", "/api/auth/challenge")
+                }
+
+                submitBtn.onclick = (event) => {
+                    var xhr = new XMLHttpRequest()
+                    xhr.onreadystatechange = () => {
+                        if (xhr.readyState == 1) {
+                            xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+                            xhr.send(JSON.stringify({
+                                "answer": otpField.value,
+                                "digest": ticket.digest,
+                            }))
+                        }
+                        else if (xhr.readyState == 4) {
+
+                        }
+                    }
+                    xhr.open("POST", "/api/auth/response")
+                }
+
+                otpField.onkeyup = (event) => {
+                    submitBtn.disabled = ticket === null || otpField.value.length != 4;
+                }
+            }
+        </script>
+    </head>
+    <body onload="load()">
+        <label for="otp">OTP:</label>
+        <input type="text" id="otp">
+        <button id="resend">Resend Code</button>
+        <button id="submit">Submit</button>
+    </body>
+</html>

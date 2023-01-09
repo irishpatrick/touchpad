@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 	"touchpad/security"
@@ -9,19 +10,42 @@ import (
 
 func NewAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		authHandler(w, r)
-		next.ServeHTTP(w, r)
+		shouldContinue := authHandler(w, r)
+
+		if shouldContinue {
+			next.ServeHTTP(w, r)
+		}
 	})
 }
 
-func authHandler(w http.ResponseWriter, r *http.Request) {
-	if strings.HasSuffix(r.RequestURI, "/auth/challenge") {
-		return // do nothing
-	} else if strings.HasSuffix(r.RequestURI, "/auth/response") {
-		return // do nothing
+func authHandler(w http.ResponseWriter, r *http.Request) bool {
+	if strings.HasSuffix(r.RequestURI, "/api/auth/challenge") {
+		return true // do nothing, continue
+	} else if strings.HasSuffix(r.RequestURI, "/api/auth/response") {
+		return true // do nothing, continue
+	} else if !strings.HasPrefix(r.RequestURI, "/api") {
+		return true
 	}
 
-	http.Error(w, "Forbidden", http.StatusForbidden)
+	jwtCookie, err := r.Cookie("token")
+	if err != nil {
+		if err == http.ErrNoCookie {
+			log.Printf("no token cookie")
+			http.Error(w, "Forbidden", http.StatusUnauthorized)
+		} else {
+			log.Printf("cookie error: %v", err)
+			http.Error(w, "Forbidden", http.StatusBadRequest)
+		}
+		return false
+	}
+
+	if !security.ValidateJwtToken(jwtCookie.Value) {
+		log.Printf("invalid token")
+		http.Error(w, "Forbidden", http.StatusUnauthorized)
+		return false
+	}
+
+	return true
 }
 
 func AuthLoginChallengeHandler(w http.ResponseWriter, r *http.Request) {

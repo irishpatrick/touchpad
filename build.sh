@@ -29,9 +29,13 @@ elif [ "$1" = "prod" ]; then
     cd ..
 
     # build server
+    cp -r static/dist server/server
+    cd server
     echo 'building server...'
     go clean
-    go build -ldflags "-s -w"
+    go build -tags release -ldflags "-s -w"
+    cd ..
+    rm -rf server/server/dist
 else
     # build driver
     ninja -C driver/build-debug driver install
@@ -47,7 +51,7 @@ else
     # build server
     echo 'building server...'
     go clean
-    go build
+    go build -tags debug
 fi
 
 tock="$(date -u +%s)"
