@@ -23,7 +23,7 @@ func authHandler(w http.ResponseWriter, r *http.Request) bool {
 		return true // do nothing, continue
 	} else if strings.HasSuffix(r.RequestURI, "/api/auth/response") {
 		return true // do nothing, continue
-	} else if !strings.HasPrefix(r.RequestURI, "/api") {
+	} else if !strings.Contains(r.RequestURI, "/auth/") {
 		return true
 	}
 
@@ -74,5 +74,6 @@ func AuthLoginResponseHandler(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:  "token",
 		Value: security.IssueJwtToken(),
+		Path:  "/",
 	})
 }

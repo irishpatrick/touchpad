@@ -1,41 +1,36 @@
 const axios = require("axios").default
 
 const PRECISION = 5
-/** endpoint constants found in index.html **/
 
-function showLogin(visible)
-{
-    let elem = document.getElementById("login")
-    if (visible)
-    {
-        elem.classList.remove("hidden")
+var HOST = undefined
+var WEBSOCK_ADDR = undefined
+
+function getCookie(cname) {
+    let name = cname + "=";
+    let decodedCookie = decodeURIComponent(document.cookie);
+    let ca = decodedCookie.split(';');
+    for(let i = 0; i <ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) == ' ') {
+            c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+            return c.substring(name.length, c.length);
+        }
     }
-    else
-    {
-        elem.classList.add("hidden")
-    }
+    return "";
 }
 
 function aliveRequest()
 {
-    var xhr = new XMLHttpRequest()
-    xhr.open("POST", ALIVE_ENDPOINT, false)
-    xhr.send()
 }
 
 function renewRequest()
 {
-    var xhr = new XMLHttpRequest()
-    xhr.open("POST", RENEW_ENDPOINT, false)
-    xhr.send()
 }
 
 function bindRequest(formElem)
 {
-    const formData = new FormData(formElem)
-    formData.append("test", "hello world")
-    axios.post(BIND_ENDPOINT, formData)
-    showLogin(false)
 }
 
 function isSockOpen(sock)
@@ -224,19 +219,20 @@ function fromScreen(sx, sy)
     return adj
 }
 
-window.addEventListener("load", (e) => 
+function init()
 {
-    document.getElementById("login").addEventListener("submit", (e) => {
-        e.preventDefault() // don't submit
-        bindRequest(document.getElementById("login"))
-    })
+    if (getCookie("token") === null || getCookie("token") === "") {
+        window.location.href = "/auth.html"
+        return
+    }
+
     var aliveIntervalID = setInterval(aliveRequest, 60 * 1000)
     var renewIntervalID = setInterval(renewRequest, 240 * 1000)
     var canvas = document.getElementById("canvas")
     canvas.width = window.innerWidth
     canvas.height = window.innerHeight
     var ctx = canvas.getContext("2d")
-    var sock = new WebSocket(ADDR)
+    var sock = new WebSocket(WEBSOCK_ADDR)
     var touchState = new TouchState()
 
     sock.onopen = function(e)
@@ -263,12 +259,6 @@ window.addEventListener("load", (e) =>
     canvas.addEventListener("mouseup", (e) =>
     {
         
-    }, false)
-
-    canvas.addEventListener("mousemove", (e) =>
-    {
-        //mouseState.update(e)
-        //mouseState.broadcast(sock)
     }, false)
 
     canvas.addEventListener("touchstart", (e) =>
@@ -298,7 +288,32 @@ window.addEventListener("load", (e) =>
         touchState.handleMove(e)
         touchState.broadcast(sock);
     }, false)
+}
+
+window.onload = (event) => {
+    let getHostPromise = new Promise((resolve, reject) => {
+        var xhr = new XMLHttpRequest()
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState == 1) {
+                xhr.send()
+            }
+            else if (xhr.readyState == 4) {
+                resolve(xhr.response)
+            }
+        }
+        xhr.open("GET", "/api/url")
+    })
+
+    getHostPromise.then((value) => {
+        HOST = value
+        WEBSOCK_ADDR = "ws://" + HOST + "/echo"
+        init()
+    })
 
     return false
-})
+}
+
+window.onclose = () => {
+    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+}
 

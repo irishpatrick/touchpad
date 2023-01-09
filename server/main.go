@@ -8,12 +8,10 @@ import "C"
 import (
 	"flag"
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
-	"path"
 	"strconv"
 	"strings"
 	"syscall"
@@ -22,7 +20,6 @@ import (
 	"touchpad/server"
 	"touchpad/util"
 
-	"github.com/golang-jwt/jwt"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 )
@@ -40,35 +37,10 @@ var certFile = flag.String("cert", "", "tls cert file")
 var keyFile = flag.String("key", "", "tlk key file")
 var HOST = *addr + ":" + *port
 
-var homeTemplate = template.Must(template.ParseFiles(path.Join(*siteDir, TEMPLATE_HTML)))
 var upgrader = websocket.Upgrader{}
 
 var isAlive = false
 var aliveTimer = time.Now()
-
-// TODO remove
-var users = map[string]string{
-	"user1": "password1",
-	"user2": "password2",
-}
-
-// TODO remove
-var jwtKey = []byte("my_secret_key")
-
-type Creds struct {
-	Password string `json:"password"`
-	Username string `json:"username"`
-}
-
-type Claims struct {
-	Username string `json:"username"`
-	jwt.StandardClaims
-}
-
-func ResetAliveTimer() {
-	isAlive = true
-	aliveTimer = time.Now().Add(1 * time.Minute)
-}
 
 func echo(w http.ResponseWriter, r *http.Request) {
 	c, err := upgrader.Upgrade(w, r, nil)
@@ -99,142 +71,6 @@ func echo(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 	}
-}
-
-func home(w http.ResponseWriter, r *http.Request) {
-	homeTemplate.Execute(w, r.Host)
-}
-
-func bind(w http.ResponseWriter, r *http.Request) {
-	r.Body = http.MaxBytesReader(w, r.Body, 32<<20+512)
-	r.ParseMultipartForm(32 << 20) // 32 Mb
-
-	uname := r.FormValue("username")
-	pass := r.FormValue("password")
-	fmt.Printf("%s,%s\n", uname, pass)
-
-	expectedPwd, ok := users[uname]
-	if !ok || expectedPwd != pass {
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	}
-
-	expirationTime := time.Now().Add(TOKEN_TIME_VALID)
-	claims := &Claims{
-		Username: uname,
-		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: expirationTime.Unix(),
-		},
-	}
-
-	ResetAliveTimer()
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenStr, err := token.SignedString(jwtKey)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	http.SetCookie(w, &http.Cookie{
-		Name:    TOKEN_COOKIE_NAME,
-		Value:   tokenStr,
-		Expires: expirationTime,
-	})
-}
-
-func alive(w http.ResponseWriter, r *http.Request) {
-	c, err := r.Cookie(TOKEN_COOKIE_NAME)
-	if err != nil {
-		if err == http.ErrNoCookie {
-			w.WriteHeader(http.StatusUnauthorized)
-			isAlive = false
-			return
-		}
-
-		w.WriteHeader(http.StatusBadRequest)
-		isAlive = false
-		return
-	}
-
-	tokenStr := c.Value
-	claims := &Claims{}
-
-	token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
-		return jwtKey, nil
-	})
-	if err != nil {
-		if err == jwt.ErrSignatureInvalid {
-			w.WriteHeader(http.StatusUnauthorized)
-			isAlive = false
-			return
-		}
-
-		w.WriteHeader(http.StatusBadRequest)
-		isAlive = false
-		return
-	}
-
-	if !token.Valid {
-		w.WriteHeader(http.StatusUnauthorized)
-		isAlive = false
-		return
-	}
-
-	ResetAliveTimer()
-}
-
-func renew(w http.ResponseWriter, r *http.Request) {
-	c, err := r.Cookie(TOKEN_COOKIE_NAME)
-	if err != nil {
-		if err == http.ErrNoCookie {
-			w.WriteHeader(http.StatusUnauthorized)
-			isAlive = false
-			return
-		}
-
-		w.WriteHeader(http.StatusBadRequest)
-		isAlive = false
-		return
-	}
-
-	tokenStr := c.Value
-	claims := &Claims{}
-
-	token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
-		return jwtKey, nil
-	})
-	if err != nil {
-		if err == jwt.ErrSignatureInvalid {
-			w.WriteHeader(http.StatusUnauthorized)
-			isAlive = false
-			return
-		}
-
-		w.WriteHeader(http.StatusBadRequest)
-		isAlive = false
-		return
-	}
-
-	if !token.Valid {
-		w.WriteHeader(http.StatusUnauthorized)
-		isAlive = false
-		return
-	}
-
-	expirationTime := time.Now().Add(TOKEN_TIME_VALID)
-	claims.ExpiresAt = expirationTime.Unix()
-	token = jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenStr, err = token.SignedString(jwtKey)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	http.SetCookie(w, &http.Cookie{
-		Name:    TOKEN_COOKIE_NAME,
-		Value:   tokenStr,
-		Expires: expirationTime,
-	})
 }
 
 func processCommand(msg []byte) {
@@ -317,13 +153,9 @@ func main() {
 	log.Println("building routes...")
 	router := mux.NewRouter()
 	router.HandleFunc("/api/url", url).Methods("GET")
-	router.HandleFunc("/api/bind", bind).Methods("POST")
-	router.HandleFunc("/api/alive", alive).Methods("POST")
-	router.HandleFunc("/api/renew", renew).Methods("POST")
 	router.HandleFunc("/api/echo", echo)
 	router.HandleFunc("/api/auth/challenge", server.AuthLoginChallengeHandler).Methods("GET")
 	router.HandleFunc("/api/auth/response", server.AuthLoginResponseHandler).Methods("POST")
-	router.HandleFunc("/", home)
 	router.PathPrefix("/").Handler(server.NewFileServer(*siteDir))
 
 	router.Use(server.NewLoggerMiddleware)

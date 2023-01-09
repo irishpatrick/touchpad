@@ -10,8 +10,6 @@ import (
 func IssueJwtToken() string {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"session": GetSessionID(),
-		"issued":  0,
-		"expires": 0,
 	})
 	tokenString, err := token.SignedString(GetTokenHMACKey())
 	if err != nil {
@@ -33,10 +31,12 @@ func ValidateJwtToken(tokenString string) bool {
 		return false
 	}
 
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		fmt.Printf("%v\n", claims)
-	} else {
-		log.Print(err)
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || !token.Valid {
+		return false
+	}
+
+	if claims["session"] != GetSessionID() {
 		return false
 	}
 

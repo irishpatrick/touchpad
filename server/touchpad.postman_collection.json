@@ -11,12 +11,13 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "localhost:8080/auth/challenge",
+					"raw": "localhost:8080/api/auth/challenge",
 					"host": [
 						"localhost"
 					],
 					"port": "8080",
 					"path": [
+						"api",
 						"auth",
 						"challenge"
 					]
@@ -31,7 +32,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\"answer\":\"6906\",\"digest\":\"aca21aba2632074265c62a43f62452190b5beaed951549c238fd9c54044680ac4065610179966c5800fa5ecd75f5b9ae22f3dcdabb826d3dc3c2b49d422ea80c9c02513507509f893b917cafe25f6fd25e4c2a80331c90b7c3d379188d26b999319c7201d49c6e3465fc0cd2ba20443d0d5487bd7bd4cbc9774a86dfb4f706d6906fde430ddbb0281ef63e295f92774da454bcbe1e5c374651b038341864f24abea8b127b18760881be630f4ec7c6ee493b0ace9f8f3fea4e2affc40a720a613af256609649ba3ede29ee329df3e0e611b3577d066561f36bd0822f516dce2a881692462ac276ce8d713e02beef03f9bece39b652c1f7924046768ec356c20118dffe00b3ac2414b4248455766cc45253d00b1b3d54ac67fc4b94950315d0a2208a9f5b1662caa141e1163ce3b9291c78ff729844be592a4d8e26193052f62ccf43b917ecb768f0684e9122dbe59b8bcb1c6c03b4b4d1472d7f574748c926235a425341e0cd98777db63e34c932c4bc8ece543a63f3e51c35da16a14f34495b6e644da4a675e7b7fd2222797d952cc6e1eccfda64fd0f34da3310164f8fe4917a96489b8e4bf9fdfc27f2ac7218fa700acc256b39a80b35118697c5c50abddf379d1b2f3b3b21fe4d97cf3019a5d144854b486b028276e3d2297899a8fa9c3d8fbe04fd81ef3f8c8be1b1c55cac334fa96ce017e41cd82d286ab811244a9e193\"}",
+					"raw": "{\"answer\":\"5998\",\"digest\":\"8804fd0a4c42dc4e44618f9a6114860edf176b7a65e385afa8555fb26a610c2d5ebea38e705922f0067c32a10cf23c1310f366b24a60ea8879097f97f122d71c58c31a7d51420665b8b1108acdb31c9e78999c025b84e58a887fae5e0956cca59422e53d0e7fefbe06c14b0f7e62c9d145725620727498c76c884dfbde409ee9905652528a4713f474bb85523a7a98a71144c5bbf75c93c9693be717d2e1621bfeea47b0998d6a8539ec29a4a1ac36805cbd7fba5d610b1a676915cea813fd94205077fa221c8dd680ff18a12d01124dc4f91b1d725646f618fbc0be3b81796eee7c6661f92c4eb4daf722345b1e44a90f9e34c90be645d0ced4e1074d3d3d70f0487ab952bcf2d7bde37aa3c1621c906c7c5e7c1d4a0ea83331f76fa632c1beb35d41aa312d20beaf0891df25f30bd886960f55400ce5da442f48dbffccace093abc0cc58c68bf1d9b082f92e8f95d962aee6adec167a90b34830708925db092a28a686ee3f04f27d3dc7c2a7e3dffb651fdb9231d93c58fb8e104ba5e44226b285033c8598f5b95aba04ff63e06bb64123ac8014ac4b2d300e773415267391f9627a0d1f7eb59e54f0537756ca55f4f16523be3993d8061b0380c83c5e9884051cfcc94d4410a5d0f94b0eeb57dd92bb53f8e4853f4bf67c1de21a196a875c080a1ba585eb9e242a68532b9d9b0df59ac96770a449d7387ac4d31f04ee9861\"}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -39,14 +40,34 @@
 					}
 				},
 				"url": {
-					"raw": "localhost:8080/auth/response",
+					"raw": "localhost:8080/api/auth/response",
 					"host": [
 						"localhost"
 					],
 					"port": "8080",
 					"path": [
+						"api",
 						"auth",
 						"response"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "localhost:8080/api/url",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/api/url",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"url"
 					]
 				}
 			},
