@@ -21,7 +21,7 @@ func GetOutboundIP() net.IP {
 func GetURL(port string) string {
 	url := "http://" + GetOutboundIP().String()
 	if len(port) > 0 {
-		url += port
+		url += ":" + port
 	}
 
 	return url
