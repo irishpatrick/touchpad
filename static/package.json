@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack --config webpack.dev.js",
-    "build-prod": "webpack --config webpack.prod.js"
+    "build-prod": "webpack --config webpack.prod.js",
+    "watch": "webpack --config webpack.dev.js --watch"
   },
   "keywords": [],
   "author": "Patrick Roche",

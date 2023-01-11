@@ -40,26 +40,19 @@ var HOST = *addr + ":" + *port
 var upgrader = websocket.Upgrader{}
 
 var isAlive = false
-var aliveTimer = time.Now()
 
 func echo(w http.ResponseWriter, r *http.Request) {
 	c, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Print("upgrade: ", err)
+		log.Print("upgrade error: ", err)
 		return
 	}
 	defer c.Close()
 
 	for {
-		if time.Now().Unix() > aliveTimer.Unix() {
-			log.Printf("token expired: current_time=%d, expiration_time=%d\n", time.Now().Unix(), aliveTimer.Unix())
-			isAlive = false
-			//break
-		}
-
 		mt, message, err := c.ReadMessage()
 		if err != nil {
-			log.Println("read: ", err)
+			log.Println("read error: ", err)
 			break
 		}
 
@@ -67,7 +60,7 @@ func echo(w http.ResponseWriter, r *http.Request) {
 
 		err = c.WriteMessage(mt, message)
 		if err != nil {
-			log.Println("write: ", err)
+			log.Println("write error: ", err)
 			break
 		}
 	}
@@ -164,10 +157,10 @@ func main() {
 	http.Handle("/", router)
 
 	if len(*certFile) > 0 && len(*keyFile) > 0 {
-		log.Printf("serving at https://%s\n", HOST)
+		log.Printf("serving at https://%s\n", util.GetURL(*port))
 		log.Fatal(http.ListenAndServeTLS(HOST, *certFile, *keyFile, nil))
 	} else {
-		log.Printf("serving at http://%s\n", HOST)
+		log.Printf("serving at http://%s\n", util.GetURL(*port))
 		log.Fatal(http.ListenAndServe(HOST, nil))
 	}
 }

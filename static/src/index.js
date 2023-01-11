@@ -29,10 +29,6 @@ function renewRequest()
 {
 }
 
-function bindRequest(formElem)
-{
-}
-
 function isSockOpen(sock)
 {
     return sock.readyState === WebSocket.OPEN
@@ -99,8 +95,11 @@ class TouchState
 {
     constructor()
     {
+        this.start = []
         this.ongoing = []
         this.last = []
+        this.leftClicks = 0
+        this.rightClicks = 0
     }
 
     ongoingTouchById(id)
@@ -113,7 +112,7 @@ class TouchState
             }
         }
 
-        return -1;
+        return -1
     }
 
     lastTouchById(id)
@@ -122,16 +121,16 @@ class TouchState
         {
             if (this.last[i].identifier == id)
             {
-                return i;
+                return i
             }
         }
 
-        return -1;
+        return -1
     }
 
     copyTouch({ identifier, pageX, pageY })
     {
-        return { identifier, pageX, pageY };
+        return { identifier, pageX, pageY }
     }
 
     handleStart(e)
@@ -140,6 +139,7 @@ class TouchState
 
         for (let i = 0; i < touches.length; i++)
         {
+            this.start.push(this.copyTouch(touches[i]))
             this.ongoing.push(this.copyTouch(touches[i]))
             this.last.push(this.copyTouch(touches[i]))
         }
@@ -150,22 +150,45 @@ class TouchState
         const touches = e.changedTouches;
         for (let i = 0; i < touches.length; i++)
         {
-            const idx = this.ongoingTouchById(touches[i].identifier);
-            this.last[idx] = this.copyTouch(this.ongoing[idx]);
-            this.ongoing[idx] = this.copyTouch(touches[i]);
+            const idx = this.ongoingTouchById(touches[i].identifier)
+            this.last[idx] = this.copyTouch(this.ongoing[idx])
+            this.ongoing[idx] = this.copyTouch(touches[i])
         }
     }
 
     handleEnd(e)
     {
+        let fingerClicks = 0
         const touches = e.changedTouches;
         for (let i = 0; i < touches.length; i++)
         {
-            const idx = this.ongoingTouchById(touches[i].identifier);
+            const idx = this.ongoingTouchById(touches[i].identifier)
             if (idx >= 0)
             {
-                this.ongoing.splice(idx, 1); // remove
-                this.last.splice(idx, 1); // remove
+                let fingerDelta = {
+                    x: this.last[i].pageX - this.start[i].pageX,
+                    y: this.last[i].pageY - this.start[i].pageY
+                }
+                if (fingerDelta.x * fingerDelta.x + fingerDelta.y * fingerDelta.y < 4)
+                {
+                    fingerClicks++
+                }
+
+                this.start.splice(idx, 1) // remove
+                this.ongoing.splice(idx, 1) // remove
+                this.last.splice(idx, 1) // remove
+            }
+        }
+
+        if (fingerClicks > 0)
+        {
+            if (fingerClicks == 1)
+            {
+                this.leftClicks++
+            }
+            else if (fingerClicks == 2)
+            {
+                this.rightClicks++
             }
         }
     }
@@ -175,11 +198,11 @@ class TouchState
         const touches = e.changedTouches;
         for (let i = 0; i < touches.length; i++)
         {
-            const idx = this.ongoingTouchById(touches[i].identifier);
+            const idx = this.ongoingTouchById(touches[i].identifier)
             if (idx >= 0)
             {
-                this.ongoing.splice(idx, 1); // remove
-                this.last.splice(idx, 1); // remove
+                this.ongoing.splice(idx, 1) // remove
+                this.last.splice(idx, 1) // remove
             }
         }
     }
@@ -191,23 +214,33 @@ class TouchState
             return;
         }
 
-        let msg = "";
-        let delta_x = 0;
-        let delta_y = 0;
+        let msg = ""
+        let delta_x = 0
+        let delta_y = 0
 
         if (this.ongoing.length == 0)
         {
-            return;
+            return
         }
 
         for (let i = 0; i < this.ongoing.length; i++)
         {
-            delta_x = this.ongoing[i].pageX - this.last[i].pageX;
-            delta_y = this.ongoing[i].pageY - this.last[i].pageY;
+            delta_x = this.ongoing[i].pageX - this.last[i].pageX
+            delta_y = this.ongoing[i].pageY - this.last[i].pageY
             msg += "(" + i + "," + delta_x + "," + delta_y + ")"
         }
 
-        sock.send(msg);
+        if (this.leftClicks > 0)
+        {
+            --this.leftClicks
+        }
+
+        if (this.rightClicks > 0)
+        {
+            --this.rightClicks
+        }
+
+        sock.send(msg)
     }
 }
 
@@ -251,42 +284,32 @@ function init()
     {
     }
 
-    canvas.addEventListener("mousedown", (e) =>
-    {
-        
-    }, false)
-
-    canvas.addEventListener("mouseup", (e) =>
-    {
-        
-    }, false)
-
     canvas.addEventListener("touchstart", (e) =>
     {
         e.preventDefault()
         touchState.handleStart(e)
-        touchState.broadcast(sock);
+        touchState.broadcast(sock)
     }, false)
     
     canvas.addEventListener("touchend", (e) =>
     {
         e.preventDefault()
         touchState.handleEnd(e)
-        touchState.broadcast(sock);
+        touchState.broadcast(sock)
     }, false)
     
     canvas.addEventListener("touchcancel", (e) =>
     {
         e.preventDefault()
         touchState.handleCancel(e)
-        touchState.broadcast(sock);
+        touchState.broadcast(sock)
     }, false)
     
     canvas.addEventListener("touchmove", (e) =>
     {
         e.preventDefault()
         touchState.handleMove(e)
-        touchState.broadcast(sock);
+        touchState.broadcast(sock)
     }, false)
 }
 
@@ -306,7 +329,7 @@ window.onload = (event) => {
 
     getHostPromise.then((value) => {
         HOST = value
-        WEBSOCK_ADDR = "ws://" + HOST + "/echo"
+        WEBSOCK_ADDR = "ws://" + HOST + "/api/echo"
         init()
     })
 
@@ -314,6 +337,6 @@ window.onload = (event) => {
 }
 
 window.onclose = () => {
-    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;"
 }
 
