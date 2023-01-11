@@ -1,16 +1,29 @@
 package security
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/golang-jwt/jwt"
 )
 
+type JWTClaims struct {
+	Session string `json:"session"`
+	jwt.StandardClaims
+}
+
 func IssueJwtToken() string {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"session": GetSessionID(),
-	})
+	claims := JWTClaims{
+		GetSessionID(),
+		jwt.StandardClaims{
+			ExpiresAt: time.Now().UnixMilli() + 5*1000,
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(GetTokenHMACKey())
 	if err != nil {
 		log.Panic(err)
@@ -18,7 +31,7 @@ func IssueJwtToken() string {
 	return tokenString
 }
 
-func ValidateJwtToken(tokenString string) bool {
+func ValidateJwtToken(tokenString string) error {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -28,17 +41,29 @@ func ValidateJwtToken(tokenString string) bool {
 	})
 	if err != nil {
 		log.Print(err)
-		return false
+		return errors.New("token parse error")
 	}
 
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok || !token.Valid {
-		return false
+	if !token.Valid {
+		return errors.New("token valid check fail")
 	}
 
-	if claims["session"] != GetSessionID() {
-		return false
+	var claims JWTClaims
+	jsonStr, err := json.Marshal(token.Claims)
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal(jsonStr, &claims); err != nil {
+		return err
 	}
 
-	return true
+	if claims.Session != GetSessionID() {
+		return errors.New("bad session id")
+	}
+
+	if err := claims.Valid(); err != nil {
+		return err
+	}
+
+	return nil
 }

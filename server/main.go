@@ -147,6 +147,7 @@ func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/api/url", url).Methods("GET")
 	router.HandleFunc("/api/echo", echo)
+	router.HandleFunc("/api/auth/alive", server.AuthAliveHandler).Methods("GET")
 	router.HandleFunc("/api/auth/challenge", server.AuthLoginChallengeHandler).Methods("GET")
 	router.HandleFunc("/api/auth/response", server.AuthLoginResponseHandler).Methods("POST")
 	router.PathPrefix("/").Handler(server.NewFileServer(*siteDir))

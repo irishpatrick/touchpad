@@ -52,8 +52,21 @@ int driver_mouse_rel(int x, int y)
 
 int driver_mouse_btn(int left, int middle, int right)
 {
-    // TODO implement
-    return 0;
+    INPUT* input = input_queue_push_get();
+
+    input->type = INPUT_MOUSE;
+    input->mi.mouseData = 0;
+    input->mi.dwFlags = 
+        MOUSEEVENTF_LEFTDOWN & (left == 1) | 
+        MOUSEEVENTF_MIDDLEDOWN & (middle == 1) | 
+        MOUSEEVENTF_RIGHTDOWN & (right == 1) |
+        MOUSEEVENTF_LEFTUP & (left == 0) | 
+        MOUSEEVENTF_MIDDLEUP & (middle = 0) |
+        MOUSEEVENTF_RIGHTUP & (right == 0);
+    input->mi.dwExtraInfo = 0;
+    input->mi.time = 0;
+
+    return driver_report();
 }
 
 int driver_report(void)

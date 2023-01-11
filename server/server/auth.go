@@ -23,7 +23,7 @@ func authHandler(w http.ResponseWriter, r *http.Request) bool {
 		return true // do nothing, continue
 	} else if strings.HasSuffix(r.RequestURI, "/api/auth/response") {
 		return true // do nothing, continue
-	} else if !strings.Contains(r.RequestURI, "/auth/") {
+	} else if !strings.Contains(r.RequestURI, "/auth/") && !strings.Contains(r.RequestURI, "echo") {
 		return true
 	}
 
@@ -39,8 +39,8 @@ func authHandler(w http.ResponseWriter, r *http.Request) bool {
 		return false
 	}
 
-	if !security.ValidateJwtToken(jwtCookie.Value) {
-		log.Printf("invalid token")
+	if err := security.ValidateJwtToken(jwtCookie.Value); err != nil {
+		log.Printf("invalid token: %v\n", err)
 		http.Error(w, "Forbidden", http.StatusUnauthorized)
 		return false
 	}
@@ -75,5 +75,18 @@ func AuthLoginResponseHandler(w http.ResponseWriter, r *http.Request) {
 		Name:  "token",
 		Value: security.IssueJwtToken(),
 		Path:  "/",
+	})
+}
+
+func AuthAliveHandler(w http.ResponseWriter, r *http.Request) {
+	jwtCookie, err := r.Cookie("token")
+	if err != nil {
+		http.Error(w, "token expired", http.StatusForbidden)
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:  jwtCookie.Name,
+		Value: security.IssueJwtToken(),
+		Path:  jwtCookie.Path,
 	})
 }
